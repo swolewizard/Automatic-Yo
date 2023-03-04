@@ -1,0 +1,1 @@
+Says 'yo' automatically when you enter a raid / group.
