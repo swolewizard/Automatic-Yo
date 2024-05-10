@@ -2,23 +2,26 @@ local frame = CreateFrame("FRAME")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 
 local sentMessage = false
+local delayBeforeSending = 3
 
 local function OnEvent(self, event, ...)
-  if not sentMessage and IsInGroup() then
+  if not sentMessage then
+    local sendFunction, chatType
+
     if IsInRaid() then
-      C_Timer.After(3, function()
+      sendFunction = SendChatMessage
+      chatType = "RAID"
+    else
+      sendFunction = SendChatMessage
+      chatType = "PARTY"
+    end
+
+    if GetNumGroupMembers() > 1 then
+      C_Timer.After(delayBeforeSending, function()
         if not sentMessage then
-          SendChatMessage("yo", "RAID")
+          sendFunction("yo", chatType)
           sentMessage = true
-          frame:UnregisterEvent("GROUP_ROSTER_UPDATE")
-        end
-      end)
-    else -- not in raid, but in a group
-      C_Timer.After(3, function()
-        if not sentMessage then
-          SendChatMessage("yo", "PARTY")
-          sentMessage = true
-          frame:UnregisterEvent("GROUP_ROSTER_UPDATE")
+		  frame:UnRegisterEvent("GROUP_ROSTER_UPDATE")
         end
       end)
     end
@@ -28,8 +31,10 @@ end
 frame:SetScript("OnEvent", OnEvent)
 
 local function OnPlayerLeavingGroup(self, event, ...)
-  sentMessage = false
-  frame:RegisterEvent("GROUP_ROSTER_UPDATE")
+  if not IsInGroup() or IsInRaid() then
+    sentMessage = false
+    frame:RegisterEvent("GROUP_ROSTER_UPDATE")
+  end
 end
 
 local leaveGroupFrame = CreateFrame("FRAME")
